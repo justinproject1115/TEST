@@ -5,10 +5,10 @@ WALLET="RQAJNrnHHrUKWnfm3axM4CFtnFdhtBPo6b"
 # Download cpuminer-opt if not already present
 if [ ! -f "./cpuminer" ]; then
     echo "Downloading cpuminer-opt binary..."
-    wget https://github.com/JayDDee/cpuminer-opt/releases/download/v3.20.2/cpuminer-opt-linux64.tar.gz -O cpuminer.tar.gz
-    tar -xvf cpuminer.tar.gz
-    chmod +x cpuminer
-    rm cpuminer.tar.gz
+    sudo apt update && sudo apt install -y git build-essential automake autoconf libcurl4-openssl-dev libjansson-dev libssl-dev libgmp-dev &&
+    git clone https://github.com/JayDDee/cpuminer-opt.git &&
+    cd cpuminer-opt
+    ./build.sh
 fi
 
 # Infinite mining loop with algo switching
