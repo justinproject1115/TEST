@@ -31,7 +31,7 @@ while true; do
     kill $PID
 
     echo "Mining Yespower..."
-    ./cpuminer-opt -a yespower -o stratum+tcp://yespower.mine.zpool.ca:6234 -u $WALLET -p c=RVN &
+    ./cpuminer -a yespower -o stratum+tcp://yespower.mine.zpool.ca:6234 -u $WALLET -p c=RVN &
     PID=$!
     sleep 60
     kill $PID
