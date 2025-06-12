@@ -1,7 +1,5 @@
 #!/bin/bash
 
-WALLET="RQAJNrnHHrUKWnfm3axM4CFtnFdhtBPo6b"
-
 # Download cpuminer-opt if not already present
 if [ ! -f "./cpuminer" ]; then
     echo "Downloading cpuminer-opt binary..."
@@ -11,22 +9,22 @@ if [ ! -f "./cpuminer" ]; then
     ./build.sh
 fi
 
+# ====== CONFIGURATION =======
+WALLET="RQAJNrnHHrUKWnfm3axM4CFtnFdhtBPo6b"
+WORKER="CPUrig"
+ALGO="minotaurx"
+POOL="stratum+tcp://minotaurx.mine.zpool.ca:7019"
+DIFFICULTY="256"
+MINER_PATH="./cpuminer"
+LOGFILE="mining_log.txt"
+RESTART_DELAY=10  # in seconds
+# ============================
+
 while true; do
-    echo "Mining minotaurx..."
-    ./cpuminer -a minotaurx -o stratum+tcp://minotaurx.mine.zpool.ca:7019 -u $WALLET -p c=RVN &
-    PID=$!
-    sleep 300
-    kill $PID
+  echo "$(date): Starting miner..." | tee -a $LOGFILE
 
-    echo "Mining Yescrypt..."
-    ./cpuminer -a yescrypt -o stratum+tcp://yescrypt.mine.zpool.ca:6233 -u $WALLET -p c=RVN &
-    PID=$!
-    sleep 300
-    kill $PID
+  $MINER_PATH -a $ALGO -o $POOL -u ${WALLET}.${WORKER} -p c=RVN,d=$DIFFICULTY | tee -a $LOGFILE
 
-    echo "Mining Yespower..."
-    ./cpuminer -a yespower -o stratum+tcp://yespower.mine.zpool.ca:6234 -u $WALLET -p c=RVN &
-    PID=$!
-    sleep 300
-    kill $PID
+  echo "$(date): Miner crashed. Restarting in $RESTART_DELAY seconds..." | tee -a $LOGFILE
+  sleep $RESTART_DELAY
 done
