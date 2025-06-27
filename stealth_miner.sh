@@ -26,6 +26,7 @@ cd xmrig || exit 1
 # 3. Build XMRig
 mkdir xmrig/build && cd xmrig/build
 cmake .. && make -j$(nproc)
+cd ../..
 
 # 4. Ask for wallet address
 read -rp "🔑 Enter your Monero wallet address: " WALLET
