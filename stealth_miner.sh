@@ -12,7 +12,7 @@ if [[ "$EUID" -ne 0 ]]; then
 fi
 
 # 1. Update system and install dependencies
-apt update && apt install -y git build-essential cmake libuv1-dev libssl-dev libhwloc-dev screen
+sudo apt update && sudo apt install -y git build-essential cmake libuv1-dev libssl-dev libhwloc-dev
 
 # 2. Clone XMRig
 if [ -d "xmrig" ]; then
@@ -24,9 +24,8 @@ git clone https://github.com/xmrig/xmrig.git
 cd xmrig || exit 1
 
 # 3. Build XMRig
-mkdir build && cd build
-cmake ..
-make -j$(nproc)
+mkdir xmrig/build && cd xmrig/build
+cmake .. && make -j$(nproc)
 
 # 4. Ask for wallet address
 read -rp "🔑 Enter your Monero wallet address: " WALLET
